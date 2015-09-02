@@ -1,0 +1,61 @@
+\documentclass[]{article}
+
+%opening
+\title{Design of a UAV Radar Using COTS Automotive RADAR Components}
+\author{Brandon Jennings and William Horn}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document captures the design of a UAV RADAR system built using automotive RADAR components.
+\end{abstract}
+
+\section{Introduction and Overview}
+The purpose of this document is to provide a reference for the design and trade study of a UAV RADAR system built using automotive RADAR components. Calculations, notes, and general musings will be found below.
+
+\section{Transmitter}
+
+\subsection{Pre-Amp: TGA4706-FC-1}
+The pre-amp under consideration has a typical output power of 12 dBm.
+
+\subsection{Microstrip / Patch Antenna}
+
+The patch antenna is notoriously narrow band (3\%). For a 77 GHz transmission signal, that means that the bandwidth for the FM should be within 2.5 GHz. This information taken from http://www.antenna-theory.com/antennas/patches/antenna.php. 
+
+The ground plane should extend beyond the edges of the patch by at least 2 to 3 times the board thickness for proper operation (http://orbanmicrowave.com/wp-content/uploads/2014/12/Orban-Patch-Antennas-2009-rev.pdf). A good approximation for resonant length is:
+
+\begin{equation}
+L \approx 0.49 \lambda_{d} = 0.49 \frac{\lambda_{0}}{\sqrt{\epsilon_{r}}}
+\end{equation}
+
+\noindent  where: \newline
+$ L $ = resonant length \newline
+$ \lambda_{d} $ = wavelength in PC board \newline
+$ \lambda_{0} $ = wavelength in free space \newline
+$ \epsilon_{r} $ = dielectric constant of the printed circuit board (4 for FR4)
+
+Connecting the feed line to the patch is a matter of impedance matching for the application. Somewhere along the resonant length in the middle of the patch is a point that yields $ 50 \Omega $ of impedance, that's probably where we want to set our feed line.
+
+\subsubsection{Antenna Gain}
+From "Antenna Patterns and Their Meaning.pdf":
+The gain of and antenna (in any given direction) is defined as the ratio of the power gain in a given direction to the power gain of a reference antenna in the same direction. It is standard practice to use an isotropic radiator as the reference antenna in this definition. It is customary to use dBi (decibels relative to an isotropic radiator) for gain with respect to an isotropic ratiator. Gain is expressed in dBi using the following formula:
+
+\begin{equation}
+GdBi = 10 \log{ \frac{G_{numeric}}{G_{isotropic}} } = 10 \log{ G_{numeric} }
+\end{equation}
+
+Ocassionally, a theoretical dipole is used as the reference, so the unit dBd (decibels relative to a dipole) is used to describe the gain w.r.t. a dipole.
+
+\section{Receiver}
+
+\section{Digital Signal Processing (DSP)}
+
+\section{1D RADAR Performance Analysis}
+
+\section{2D RADAR Performance Analysis}
+
+\section{3D RADAR Performance Analysis}
+
+\end{document}
