@@ -46,13 +46,29 @@ The gain of and antenna (in any given direction) is defined as the ratio of the 
 GdBi = 10 \log{ \frac{G_{numeric}}{G_{isotropic}} } = 10 \log{ G_{numeric} }
 \end{equation}
 
-Ocassionally, a theoretical dipole is used as the reference, so the unit dBd (decibels relative to a dipole) is used to describe the gain w.r.t. a dipole.
+Occasionally, a theoretical dipole is used as the reference, so the unit dBd (decibels relative to a dipole) is used to describe the gain w.r.t. a dipole.
 
 \section{Receiver}
 
+
 \section{Digital Signal Processing (DSP)}
 
+\subsection{Digital Circuitry}
+This section details the conceptual design for the digital circuitry that is needed coming out of the AD8285 chip. My first thoughts are to use a FIFO for each channel of the receiver that is to be sampled. These FIFOs will store the samples collected from each sweep of the FMCW radar. That means that the size of each FIFO is dependent on both the sample rate of the ADC as well as the sweep period continuous wave.
+
+Assuming a maximum sample rate of 72 MSPS and a maximum sweep period of 0.001 seconds, we can expect to store a maximum of 72,000 12 bit values. The FIFOs will then need to be transferred to the host processor for post processing (FFT, cross correlation, etc...). It is my desire to send the data over USB 3.0 to the processing device. A computer capable of handling the post processing functions should have a USB 3.0 interface. This also allows room for growth for further iterations of the RADAR.
+
+\subsection{Post Processing}
+
 \section{1D RADAR Performance Analysis}
+
+\subsection{Alpha Configuration}
+
+\subsubsection{Transmission}
+A single transmission line starts with an input into the voltage controlled oscillator (VCO). It's likely that a microcontroller unit (MCU) can be used to supply the linear ramp voltage using an on-board digital to analog (D/A) converter. To keep the frequency ramp linear over all operating conditions, it's likely that a feedback function be integrated into this MCU. This allows "smart-chirp" operations in all operating conditions. An 8-bit PIC 16F690 (retails for \$2.00) is more than likely adequate.
+
+The VCO part number is an HMC385 (retails for \$14.69). It provides a frequency range of 2.25 GHz to 2.5 GHz.
+
 
 \section{2D RADAR Performance Analysis}
 

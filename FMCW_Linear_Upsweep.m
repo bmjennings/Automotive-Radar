@@ -2,10 +2,10 @@ clear all
 close all
 
 % Define initial configuration
-B = 1.0e9;  % linear sweep bandwidth
+B = 1.5e9;  % linear sweep bandwidth
 Tm = 0.001; % linear sweep period
 fc = 75e9;  % base frequency
-fn = 1/(72e6)*(1/4);  % 72 Msps (72 Megasamples per second) * (1/4) sample rate per channel
+fn = 1/(72e6*(1/4));  % 72 Msps (72 Megasamples per second) * (1/4) sample rate per channel
 a1 = 1.0; % Transmit Amplitude
 
 % Define the transmit signal
