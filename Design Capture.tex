@@ -17,12 +17,15 @@ The purpose of this document is to provide a reference for the design and trade 
 
 \section{Transmitter}
 
-\subsection{Pre-Amp: TGA4706-FC-1}
-The pre-amp under consideration has a typical output power of 12 dBm.
+The range we desire to achieve with the RADAR is ~500 meters in all operational conditions. The transmission power and transmission antenna directivity must be analyzed to determine if a certain configuration is capable of this range.
 
-\subsection{Microstrip / Patch Antenna}
+\subsection{Transmission Power} 
 
-The patch antenna is notoriously narrow band (3\%). For a 77 GHz transmission signal, that means that the bandwidth for the FM should be within 2.5 GHz. This information taken from http://www.antenna-theory.com/antennas/patches/antenna.php. 
+The predicted transmission power in order to realize the 500 meter range under antenna radiation pattern assumptions.
+
+\subsection{Transmission Antenna}
+
+Only the Microstrip / Patch Antenna is considered here. This is the easiest antenna type to realize on a circuit board, and there is much literature available for the design and performance prediction of these antenna types. The patch antenna is notoriously narrow band (3\%). For a 77 GHz transmission signal, that means that the bandwidth for the FM should be within 2.5 GHz. This information taken from http://www.antenna-theory.com/antennas/patches/antenna.php. 
 
 The ground plane should extend beyond the edges of the patch by at least 2 to 3 times the board thickness for proper operation (http://orbanmicrowave.com/wp-content/uploads/2014/12/Orban-Patch-Antennas-2009-rev.pdf). A good approximation for resonant length is:
 
@@ -38,7 +41,7 @@ $ \epsilon_{r} $ = dielectric constant of the printed circuit board (4 for FR4)
 
 Connecting the feed line to the patch is a matter of impedance matching for the application. Somewhere along the resonant length in the middle of the patch is a point that yields $ 50 \Omega $ of impedance, that's probably where we want to set our feed line.
 
-\subsubsection{Antenna Gain}
+\subsubsection{Directivity / Transmitter Antenna Gain}
 From "Antenna Patterns and Their Meaning.pdf":
 The gain of and antenna (in any given direction) is defined as the ratio of the power gain in a given direction to the power gain of a reference antenna in the same direction. It is standard practice to use an isotropic radiator as the reference antenna in this definition. It is customary to use dBi (decibels relative to an isotropic radiator) for gain with respect to an isotropic ratiator. Gain is expressed in dBi using the following formula:
 
@@ -47,6 +50,14 @@ GdBi = 10 \log{ \frac{G_{numeric}}{G_{isotropic}} } = 10 \log{ G_{numeric} }
 \end{equation}
 
 Occasionally, a theoretical dipole is used as the reference, so the unit dBd (decibels relative to a dipole) is used to describe the gain w.r.t. a dipole.
+
+\subsubsection{Transmitter Array}
+
+This section presents an analysis of how to put together a transmitter array in order to develop a hemispherical radiation pattern from an array of patch antenna elements.
+
+\subsection{Heat Generation and Thermal Analysis}
+
+An analysis of the patch antenna array based on the predicted transmission power and efficiency of the transmitter array is presented here.
 
 \section{Receiver}
 
@@ -62,13 +73,43 @@ Assuming a maximum sample rate of 72 MSPS and a maximum sweep period of 0.001 se
 
 \section{1D RADAR Performance Analysis}
 
+This section presents results from range equations and analyses conducted under the assumption of a 1D radar with a single target. The analyses are conducted under the assumption of published performance specifications of purchasable off the shelf components that are readily available.
+
 \subsection{Alpha Configuration}
 
-\subsubsection{Transmission}
-A single transmission line starts with an input into the voltage controlled oscillator (VCO). It's likely that a microcontroller unit (MCU) can be used to supply the linear ramp voltage using an on-board digital to analog (D/A) converter. To keep the frequency ramp linear over all operating conditions, it's likely that a feedback function be integrated into this MCU. This allows "smart-chirp" operations in all operating conditions. An 8-bit PIC 16F690 (retails for \$2.00) is more than likely adequate.
+With this first configuration of the RADAR, the focus is to obtain a complete system (single transmit antenna, single receive antenna, post processing) in the hopes that this configuration is cheap and flexible enough to scale to higher complexity level configurations. The complete system will be broken into least complicated testable elements (probably referred to as modules). For each module, the fundamental questions of test must be answered:
 
-The VCO part number is an HMC385 (retails for \$14.69). It provides a frequency range of 2.25 GHz to 2.5 GHz.
+\begin{enumerate}
+	\item How is the module tested? \\
+	\item What equipment is needed to test the module? \\
+	\item What are the success criteria demonstrating that the module is complete? \\
+\end{enumerate}
 
+\subsubsection{Transmitter Module}
+Using only a Voltage Controlled Oscillator (VCO) to command the chirp will ultimately prove to be an inadequate configuration for the FMCW type RADAR we plan to implement. There are too many environmental conditions that can affect the frequency coming out of the VCO (introduces non-linearities) to rely on an open loop VCO for the linear sweep modulation pattern. At the millimeter wave frequency levels (~75 GHz), the transmitter should have a bandwidth at or above 1.5 GHz to resolve target distance within 10 cm (theoretically). The transmission sweep pattern needs to be as linear as possible throughout the sweep.
+
+In order to keep the sweep patterns as linear as possible, chips with phase locked loop and direct digital synthesis chips have been investigated. A possible solution to obtain a frequency between 11.5 and 12.5 GHz and achieve the 1.5 GHz bandwidth requirement is the HMC783LP6CE (\$77.09 at Mouser). This chip is a Fractional-N PLL device with VCO. It requires a VCO input and a reference clock input. Additionally, memory registers in the chip are written to configure the device for the application. These memory registers give the designer access to many features about the chip, but the most important is the ability to divide the RF out frequency or the reference input frequency in order to change the RF out frequency by discrete steps. This means that a constant VCO input can be supplied to the chip and the linear sweep taken care of through memory register writes via SPI via a controlling processor.
+
+I like this chip as a transmitter solution. The frequency step size is 24 bits with typically a 3 Hz resolution (min). The output frequency is controlled via a feedback circuit (with a finite bandwidth, to be sure), which provides linearity of the RF sweep over the operating conditions. Presented next is an analysis of the chip to realize the FMCW linear sweep pattern that we need for our application.
+
+This paragraph details how to configure this chip. The reference oscillator will be a 50 MHz oscillator (as in the reference design for the chip, use part number ASE-50.000MHZ-L-R-T, can be purchased through Mouser). Set the reference oscillator divider to 50 to obtain a Phase Frequency Detector (PFD) frequency ($f_{PFD}$) of 1 MHz. This is the resolution of the linear sweep frequency step size. If we assume that the linear frequency sweep has a period ($T_{m}$) of 0.001 seconds and a total frequency range of 0.25 GHz (operating at 12.0 GHz base frequency), then a total of 250 steps are necessary during $T_{m}$. At an SPI clock rate of 50 MHz (max rate) and 32 bits per write cycle, a total period of 660 ns (equivalent to 33 full clock cycles) is necessary to update the RF divider register. This allows for a maximum of 1515 register writes during $T_{m}$. Since only 250 writes are necessary in order to realize the 250 step resolution for the linear sweep, the performance is sufficient from a timing perspective.
+
+Next, we need to determine what processor will be acting as the SPI Master in order to update the HMC783LP6CE chip during the linear sweep cycle. The processor should have at least 1 SPI module capable of 50 MHz clock frequency to be compatible with the HMC783LP6CE chip's highest SPI frequency. The chip must also be able to interrupt at a frequency fast enough to update the SPI write at the resolution necessary for the linear sweep pattern. The chip must operate at an instruction cycle speed high enough to enter the interrupt routine and write the SPI control registers via a lookup table within the time alloted for a frequency step update during the linear sweep.
+
+At first glance, the processor that looks adequate is the PIC32MZ0512EFE064. These retail for under \$8.00 at individual prices. The processor will require an oscillator circuit to drive it. This should cause the PIC to operate at 200 MHz and allow the SPI module to operate at the maximum 50 Mbps.
+
+Let's now look at the entire transmission circuit. From the output of the HMC783LP6CE, use an HMC576LC3B (\$51.59 at mouser) to multiply frequency by 2 and amplify the power. Next, use an HMC-XTB110 (\$66.01 at Mouser) to multiply frequency by 3 to get into the 70 GHz range. To amplify the power in order to transmit, use an HMC-AUH320 (\$81.93 at Mouser). Send to patch antenna; details on the patch antenna to follow shortly.
+
+Total chip cost for the transmitter: \$77.09 + \$51.59 + \$66.01 + \$81.93 + \$8.00 = \$284.63
+Tranmitter chipset necessary: PIC32MZ0512EFE064, HMC783LP6CE, HMC576LC3B, HMC-XTB110, HMC-AUH320.
+
+Now we need to evaluate how to test the transmitter module in the laboratory environment to ensure it is operating correctly.
+
+\subsubsection{Receiver Module}
+
+\subsubsection{Signal Processing}
+
+\subsubsection{Power Analysis}
 
 \section{2D RADAR Performance Analysis}
 
